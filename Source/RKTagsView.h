@@ -36,6 +36,9 @@ typedef NS_ENUM(NSInteger, RKTagsViewTextFieldAlign) { // align is relative to a
 @property (nonatomic, weak, nullable) IBOutlet id<RKTagsViewDelegate> delegate;
 @property (nonatomic, readonly) CGSize contentSize;
 
+@property (nonatomic) BOOL addTagBySpace; // default is YES
+// Sets to trims input tag string, spaces and new lines.
+@property (nonatomic) BOOL trimAddedTag; // default is NO
 @property (nonatomic, strong) UIFont *font; // default is font from textfield
 @property (nonatomic) BOOL editable; // default is YES
 @property (nonatomic) BOOL selectable; // default is YES

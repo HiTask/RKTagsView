@@ -23,9 +23,12 @@
 
 - (void)viewDidLoad {
   [super viewDidLoad];
+  self.tagsView.addTagBySpace = NO;
+  self.tagsView.trimAddedTag = YES;
   self.tagsView.textField.placeholder = @"Add tag...";
   self.tagsView.textField.returnKeyType = UIReturnKeyDone;
   self.tagsView.textField.delegate = self;
+  self.tagsView.delegate = self;
 }
 
 #pragma mark - User Interaction
@@ -72,9 +75,11 @@
 }
 
 - (IBAction)generateTagsTapped {
-  NSString *text = @"Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt.";
+//  NSString *text = @"Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt.";
+	  NSString *text = @"Lorem ipsum  dolor sit amet,  consectetuer adipiscing elit.";
   [self.tagsView removeAllTags];
-  for (NSString *word in [text componentsSeparatedByString:@" "]) {
+  NSArray *tagsToAdd = [text componentsSeparatedByString:@"  "];
+  for (NSString *word in tagsToAdd) {
     if (word.length > 0) {
       [self.tagsView addTag:word];
     }
@@ -94,12 +99,13 @@
 
 #pragma mark - RKTagsViewDelegate
 
-- (UIButton *)tagsView:(RKTagsView *)tagsView buttonForTagAtIndex:(NSInteger)index {
-  RKCustomButton *customButton = [RKCustomButton buttonWithType:UIButtonTypeSystem];
-  customButton.titleLabel.font = tagsView.font;
-  [customButton setTitle:[NSString stringWithFormat:@"%@,", tagsView.tags[index]] forState:UIControlStateNormal];
-  [customButton runBubbleAnimation];
-  return customButton;
-}
+//- (UIButton *)tagsView:(RKTagsView *)tagsView buttonForTagAtIndex:(NSInteger)index {
+//  RKCustomButton *customButton = [RKCustomButton buttonWithType:UIButtonTypeSystem];
+//  customButton.titleLabel.font = tagsView.font;
+//  [customButton setTitle:[NSString stringWithFormat:@"%@", tagsView.tags[index]] forState:UIControlStateNormal];
+//  [customButton runBubbleAnimation];
+//  return customButton;
+//}
+
 
 @end

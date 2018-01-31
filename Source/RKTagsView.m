@@ -79,6 +79,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   [self.becomeFirstResponderButton addTarget:self.inputTextField action:@selector(becomeFirstResponder) forControlEvents:UIControlEventTouchUpInside];
   [self.scrollView addSubview:self.becomeFirstResponderButton];
   //
+  _addTagBySpace = YES;
   _editable = YES;
   _selectable = YES;
   _allowsMultipleSelection = YES;
@@ -348,7 +349,19 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 - (void)addTag:(NSString *)tag {
-  [self insertTag:tag atIndex:self.mutableTags.count];
+  if (tag == nil) {
+	return;
+  }
+
+  NSString *tagToAdd;
+  if (_trimAddedTag) {
+	tagToAdd = [tag stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+  } else {
+	tagToAdd = tag;
+  }
+  if (tagToAdd.length > 0) {
+	[self insertTag:tagToAdd atIndex:self.mutableTags.count];
+  }
 }
 
 - (void)insertTag:(NSString *)tag atIndex:(NSInteger)index {
@@ -450,6 +463,11 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   if (self.deselectAllOnEdit) {
     [self deselectAll];
   }
+	
+  if (!_addTagBySpace) {
+	  return;
+  }
+	
   NSMutableArray *tags = [[(self.inputTextField.text ?: @"") componentsSeparatedByCharactersInSet:self.deliminater] mutableCopy];
   self.inputTextField.text = [tags lastObject];
   [tags removeLastObject];
@@ -464,6 +482,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   }
   [self setNeedsLayout];
   [self layoutIfNeeded];
+	
   // scroll if needed
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
     if (_scrollsHorizontally) {
