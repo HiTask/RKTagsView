@@ -13,11 +13,11 @@
             buildForProfiling = "YES"
             buildForArchiving = "YES">
             <BuildableReference
-               BuildableIdentifier = 'primary'
-               BlueprintIdentifier = 'CDA7DAB52F9E0E3F6EB3F565'
-               BlueprintName = 'RKTagsView'
-               ReferencedContainer = 'container:Pods.xcodeproj'
-               BuildableName = 'libRKTagsView.a'>
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3EA572B0C13446DE7B78EBC47267B324"
+               BlueprintName = "RKTagsView"
+               ReferencedContainer = "container:Pods.xcodeproj"
+               BuildableName = "libRKTagsView.a">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>

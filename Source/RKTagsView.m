@@ -6,6 +6,21 @@
 #define DEFAULT_BUTTON_CORNER_RADIUS 6
 #define DEFAULT_BUTTON_BORDER_WIDTH 1
 
+struct InputTextFieldLayoutCalculationContext
+{
+	CGRect textfieldFrame;
+	CGRect lowerFrame;
+	CGFloat contentWidth;
+} InputTextFieldLayoutCalculationContext;
+
+
+struct TagButtonLayoutCalculationContext
+{
+	CGRect buttonFrame;
+	CGFloat contentWidth;
+} TagButtonLayoutCalculationContext;
+
+
 const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 
 @interface __RKInputTextField: UITextField
@@ -13,6 +28,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 @end
 
 @interface RKTagsView()
+@property () NSUInteger shownTagsCount;
 @property (nonatomic, strong) NSMutableArray<NSString *> *mutableTags;
 @property (nonatomic, strong) NSMutableArray<UIButton *> *mutableTagButtons;
 @property (nonatomic, strong, readwrite) UIScrollView *scrollView;
@@ -79,7 +95,10 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   [self.becomeFirstResponderButton addTarget:self.inputTextField action:@selector(becomeFirstResponder) forControlEvents:UIControlEventTouchUpInside];
   [self.scrollView addSubview:self.becomeFirstResponderButton];
   //
-  _addTagBySpace = YES;
+  _moreTagsStringSingular = @"+1 more tag";
+  _moreTagsStringPlural = @"+%@ more tags";
+
+	_addTagBySpace = YES;
   _editable = YES;
   _selectable = YES;
   _allowsMultipleSelection = YES;
@@ -99,92 +118,65 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 
 - (void)layoutSubviews {
   [super layoutSubviews];
+	
   CGFloat contentWidth = self.bounds.size.width - self.scrollView.contentInset.left - self.scrollView.contentInset.right;
   CGRect lowerFrame = CGRectZero;
   // layout tags buttons
   CGRect previousButtonFrame = CGRectZero;
+	BOOL isViewOverfilled = NO;
+	_shownTagsCount = 0;
   for (UIButton *button in self.mutableTagButtons) {
-    CGRect buttonFrame = [self originalFrameForView:button];
-    if (_scrollsHorizontally || (CGRectGetMaxX(previousButtonFrame) + self.interitemSpacing + buttonFrame.size.width <= contentWidth)) {
-      buttonFrame.origin.x = CGRectGetMaxX(previousButtonFrame);
-      if (buttonFrame.origin.x > 0) {
-        buttonFrame.origin.x += self.interitemSpacing;
-      }
-      buttonFrame.origin.y = CGRectGetMinY(previousButtonFrame);
-      if (_scrollsHorizontally && CGRectGetMaxX(buttonFrame) > self.bounds.size.width) {
-        contentWidth = CGRectGetMaxX(buttonFrame) + self.interitemSpacing;
-      }
-    } else {
-      buttonFrame.origin.x = 0;
-      buttonFrame.origin.y = MAX(CGRectGetMaxY(lowerFrame), CGRectGetMaxY(previousButtonFrame));
-      if (buttonFrame.origin.y > 0) {
-        buttonFrame.origin.y += self.lineSpacing;
-      }
-      if (buttonFrame.size.width > contentWidth) {
-        buttonFrame.size.width = contentWidth;
-      }
-    }
-    if (self.tagButtonHeight > RKTagsViewAutomaticDimension) {
-      buttonFrame.size.height = self.tagButtonHeight;
-    }
-    [self setOriginalFrame:buttonFrame forView:button];
-    previousButtonFrame = buttonFrame;
-    if (CGRectGetMaxY(lowerFrame) < CGRectGetMaxY(buttonFrame)) {
-      lowerFrame = buttonFrame;
-    }
+	  struct TagButtonLayoutCalculationContext buttonLayoutCalculationContext = [self calculateTagButtonLayout:button with:lowerFrame previousButtonFrame:previousButtonFrame contentWidth:contentWidth];
+
+	  // Checks if current tag button and input text field overfill the view.
+	  if (_constantHeight && !_displayMoreTagsCount) {
+		  CGFloat maxY = CGRectGetMaxY(buttonLayoutCalculationContext.buttonFrame);
+		  if (maxY > self.bounds.size.height) {
+			  isViewOverfilled = YES;
+		  }
+	  } else if (_constantHeight && _displayMoreTagsCount) {
+		  NSUInteger notShownTagsCount = self.mutableTagButtons.count - _shownTagsCount;
+		  [self updateMoreTagsLabel:notShownTagsCount];
+		  [self.inputTextField sizeToFit];
+		  struct InputTextFieldLayoutCalculationContext inputTextFieldLayoutCalculationContext = [self calculateTextFieldLayoutWith:buttonLayoutCalculationContext.buttonFrame previousButtonFrame:buttonLayoutCalculationContext.buttonFrame contentWidth:buttonLayoutCalculationContext.contentWidth];
+
+		  CGFloat maxY = CGRectGetMaxY(inputTextFieldLayoutCalculationContext.textfieldFrame);
+		  if (maxY > self.bounds.size.height) {
+			  isViewOverfilled = YES;
+		  }
+	  }
+
+	  if (!isViewOverfilled) {
+		  if (button.superview == nil) {
+			  [self.scrollView addSubview:button];
+		  }
+		  
+		  [self setOriginalFrame:buttonLayoutCalculationContext.buttonFrame forView:button];
+		  contentWidth = buttonLayoutCalculationContext.contentWidth;
+		  previousButtonFrame = buttonLayoutCalculationContext.buttonFrame;
+		  if (CGRectGetMaxY(lowerFrame) < CGRectGetMaxY(buttonLayoutCalculationContext.buttonFrame)) {
+			  lowerFrame = buttonLayoutCalculationContext.buttonFrame;
+		  }
+		  _shownTagsCount++;
+	  } else {
+		  break;
+	  }
   }
+
+	// Removes tag buttons from view which overfill it.
+	for (NSUInteger i = _shownTagsCount; i < self.mutableTagButtons.count; i++) {
+		UIButton *button = self.mutableTagButtons[i];
+		[button removeFromSuperview];
+	}
+
   // layout textfield if needed
-  if (self.editable) {
-    [self.inputTextField sizeToFit];
-    CGRect textfieldFrame = [self originalFrameForView:self.inputTextField];
-    if (self.textFieldHeight > RKTagsViewAutomaticDimension) {
-      textfieldFrame.size.height = self.textFieldHeight;
-    }
-    if (self.mutableTagButtons.count == 0) {
-      textfieldFrame.origin.x = 0;
-      textfieldFrame.origin.y = 0;
-      textfieldFrame.size.width = contentWidth;
-      lowerFrame = textfieldFrame;
-    } else if (_scrollsHorizontally || (CGRectGetMaxX(previousButtonFrame) + self.interitemSpacing + textfieldFrame.size.width <= contentWidth)) {
-      textfieldFrame.origin.x = self.interitemSpacing + CGRectGetMaxX(previousButtonFrame);
-      switch (self.textFieldAlign) {
-        case RKTagsViewTextFieldAlignTop:
-          textfieldFrame.origin.y = CGRectGetMinY(previousButtonFrame);
-          break;
-        case RKTagsViewTextFieldAlignCenter:
-          textfieldFrame.origin.y = CGRectGetMinY(previousButtonFrame) + (previousButtonFrame.size.height - textfieldFrame.size.height) / 2;
-          break;
-        case RKTagsViewTextFieldAlignBottom:
-          textfieldFrame.origin.y = CGRectGetMinY(previousButtonFrame) + (previousButtonFrame.size.height - textfieldFrame.size.height);
-      }
-      if (_scrollsHorizontally) {
-        textfieldFrame.size.width = self.inputTextField.bounds.size.width;
-        if (CGRectGetMaxX(textfieldFrame) > self.bounds.size.width) {
-          contentWidth += textfieldFrame.size.width;
-        }
-      } else {
-        textfieldFrame.size.width = contentWidth - textfieldFrame.origin.x;
-      }
-      if (CGRectGetMaxY(lowerFrame) < CGRectGetMaxY(textfieldFrame)) {
-        lowerFrame = textfieldFrame;
-      }
-    } else {
-      textfieldFrame.origin.x = 0;
-      switch (self.textFieldAlign) {
-        case RKTagsViewTextFieldAlignTop:
-          textfieldFrame.origin.y = CGRectGetMaxY(previousButtonFrame) + self.lineSpacing;
-          break;
-        case RKTagsViewTextFieldAlignCenter:
-          textfieldFrame.origin.y = CGRectGetMaxY(previousButtonFrame) + self.lineSpacing + (previousButtonFrame.size.height - textfieldFrame.size.height) / 2;
-          break;
-        case RKTagsViewTextFieldAlignBottom:
-          textfieldFrame.origin.y = CGRectGetMaxY(previousButtonFrame) + self.lineSpacing + (previousButtonFrame.size.height - textfieldFrame.size.height);
-      }
-      textfieldFrame.size.width = contentWidth;
-      CGRect nextButtonFrame = CGRectMake(0, CGRectGetMaxY(previousButtonFrame) + self.lineSpacing, 0, previousButtonFrame.size.height);
-      lowerFrame = (CGRectGetMaxY(textfieldFrame) < CGRectGetMaxY(nextButtonFrame)) ?  nextButtonFrame : textfieldFrame;
-    }
-    [self setOriginalFrame:textfieldFrame forView:self.inputTextField];
+  if (self.editable || _displayMoreTagsCount) {
+	  [self updateMoreTagsLabel];
+	  [self.inputTextField sizeToFit];
+	  struct InputTextFieldLayoutCalculationContext layoutCalculationContext = [self calculateTextFieldLayoutWith:lowerFrame previousButtonFrame:previousButtonFrame contentWidth:contentWidth];
+	  [self setOriginalFrame:layoutCalculationContext.textfieldFrame forView:self.inputTextField];
+	  lowerFrame = layoutCalculationContext.lowerFrame;
+	  contentWidth = layoutCalculationContext.contentWidth;
   }
   // set content size
   CGSize oldContentSize = self.contentSize;
@@ -198,6 +190,105 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   // layout becomeFirstResponder button
   self.becomeFirstResponderButton.frame = CGRectMake(-self.scrollView.contentInset.left, -self.scrollView.contentInset.top, self.contentSize.width, self.contentSize.height);
   [self.scrollView bringSubviewToFront:self.becomeFirstResponderButton];
+}
+
+
+// input: UIView *button, CGRect previousButtonFrame, CGRect lowerFrame, CGFloat contentWidth
+// output: CGFloat contentWidth, buttonFrame
+- (struct TagButtonLayoutCalculationContext)calculateTagButtonLayout:(UIView *)button
+																with:(CGRect)lowerFrame
+												 previousButtonFrame:(CGRect)previousButtonFrame
+														contentWidth:(CGFloat)contentWidth {
+	struct TagButtonLayoutCalculationContext layoutCalculationContext;
+	layoutCalculationContext.contentWidth = contentWidth;
+	layoutCalculationContext.buttonFrame = [self originalFrameForView:button];
+
+	if (_scrollsHorizontally || (CGRectGetMaxX(previousButtonFrame) + self.interitemSpacing + layoutCalculationContext.buttonFrame.size.width <= layoutCalculationContext.contentWidth)) {
+		layoutCalculationContext.buttonFrame.origin.x = CGRectGetMaxX(previousButtonFrame);
+		if (layoutCalculationContext.buttonFrame.origin.x > 0) {
+			layoutCalculationContext.buttonFrame.origin.x += self.interitemSpacing;
+		}
+		layoutCalculationContext.buttonFrame.origin.y = CGRectGetMinY(previousButtonFrame);
+		if (_scrollsHorizontally && CGRectGetMaxX(layoutCalculationContext.buttonFrame) > self.bounds.size.width) {
+			layoutCalculationContext.contentWidth = CGRectGetMaxX(layoutCalculationContext.buttonFrame) + self.interitemSpacing;
+		}
+	} else {
+		layoutCalculationContext.buttonFrame.origin.x = 0;
+		layoutCalculationContext.buttonFrame.origin.y = MAX(CGRectGetMaxY(lowerFrame), CGRectGetMaxY(previousButtonFrame));
+		if (layoutCalculationContext.buttonFrame.origin.y > 0) {
+			layoutCalculationContext.buttonFrame.origin.y += self.lineSpacing;
+		}
+		if (layoutCalculationContext.buttonFrame.size.width > layoutCalculationContext.contentWidth) {
+			layoutCalculationContext.buttonFrame.size.width = layoutCalculationContext.contentWidth;
+		}
+	}
+	if (self.tagButtonHeight > RKTagsViewAutomaticDimension) {
+		layoutCalculationContext.buttonFrame.size.height = self.tagButtonHeight;
+	}
+
+	return layoutCalculationContext;
+}
+
+
+// input: CGFloat contentWidth, lowerFrame, previousButtonFrame
+// output: CGRect textfieldFrame, CGRect lowerFrame, CGFloat contentWidth
+- (struct InputTextFieldLayoutCalculationContext)calculateTextFieldLayoutWith:(CGRect)lowerFrame
+														  previousButtonFrame:(CGRect)previousButtonFrame
+																 contentWidth:(CGFloat)contentWidth {
+	struct InputTextFieldLayoutCalculationContext layoutCalculationContext;
+	layoutCalculationContext.lowerFrame = lowerFrame;
+	layoutCalculationContext.contentWidth = contentWidth;
+	layoutCalculationContext.textfieldFrame = [self originalFrameForView:self.inputTextField];
+
+	if (self.textFieldHeight > RKTagsViewAutomaticDimension) {
+		layoutCalculationContext.textfieldFrame.size.height = self.textFieldHeight;
+	}
+	if (self.mutableTagButtons.count == 0) {
+		layoutCalculationContext.textfieldFrame.origin.x = 0;
+		layoutCalculationContext.textfieldFrame.origin.y = 0;
+		layoutCalculationContext.textfieldFrame.size.width = contentWidth;
+		layoutCalculationContext.lowerFrame = layoutCalculationContext.textfieldFrame;
+	} else if (_scrollsHorizontally || (CGRectGetMaxX(previousButtonFrame) + self.interitemSpacing + layoutCalculationContext.textfieldFrame.size.width <= contentWidth)) {
+		layoutCalculationContext.textfieldFrame.origin.x = self.interitemSpacing + CGRectGetMaxX(previousButtonFrame);
+		switch (self.textFieldAlign) {
+			case RKTagsViewTextFieldAlignTop:
+				layoutCalculationContext.textfieldFrame.origin.y = CGRectGetMinY(previousButtonFrame);
+				break;
+			case RKTagsViewTextFieldAlignCenter:
+				layoutCalculationContext.textfieldFrame.origin.y = CGRectGetMinY(previousButtonFrame) + (previousButtonFrame.size.height - layoutCalculationContext.textfieldFrame.size.height) / 2;
+				break;
+			case RKTagsViewTextFieldAlignBottom:
+				layoutCalculationContext.textfieldFrame.origin.y = CGRectGetMinY(previousButtonFrame) + (previousButtonFrame.size.height - layoutCalculationContext.textfieldFrame.size.height);
+		}
+		if (_scrollsHorizontally) {
+			layoutCalculationContext.textfieldFrame.size.width = self.inputTextField.bounds.size.width;
+			if (CGRectGetMaxX(layoutCalculationContext.textfieldFrame) > self.bounds.size.width) {
+				layoutCalculationContext.contentWidth += layoutCalculationContext.textfieldFrame.size.width;
+			}
+		} else {
+			layoutCalculationContext.textfieldFrame.size.width = layoutCalculationContext.contentWidth - layoutCalculationContext.textfieldFrame.origin.x;
+		}
+		if (CGRectGetMaxY(layoutCalculationContext.lowerFrame) < CGRectGetMaxY(layoutCalculationContext.textfieldFrame)) {
+			layoutCalculationContext.lowerFrame = layoutCalculationContext.textfieldFrame;
+		}
+	} else {
+		layoutCalculationContext.textfieldFrame.origin.x = 0;
+		switch (self.textFieldAlign) {
+			case RKTagsViewTextFieldAlignTop:
+				layoutCalculationContext.textfieldFrame.origin.y = CGRectGetMaxY(previousButtonFrame) + self.lineSpacing;
+				break;
+			case RKTagsViewTextFieldAlignCenter:
+				layoutCalculationContext.textfieldFrame.origin.y = CGRectGetMaxY(previousButtonFrame) + self.lineSpacing + (previousButtonFrame.size.height - layoutCalculationContext.textfieldFrame.size.height) / 2;
+				break;
+			case RKTagsViewTextFieldAlignBottom:
+				layoutCalculationContext.textfieldFrame.origin.y = CGRectGetMaxY(previousButtonFrame) + self.lineSpacing + (previousButtonFrame.size.height - layoutCalculationContext.textfieldFrame.size.height);
+		}
+		layoutCalculationContext.textfieldFrame.size.width = layoutCalculationContext.contentWidth;
+		CGRect nextButtonFrame = CGRectMake(0, CGRectGetMaxY(previousButtonFrame) + self.lineSpacing, 0, previousButtonFrame.size.height);
+		layoutCalculationContext.lowerFrame = (CGRectGetMaxY(layoutCalculationContext.textfieldFrame) < CGRectGetMaxY(nextButtonFrame)) ?  nextButtonFrame : layoutCalculationContext.textfieldFrame;
+	}
+
+	return layoutCalculationContext;
 }
 
 - (CGSize)intrinsicContentSize {
@@ -254,11 +345,16 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   if (editable) {
     self.inputTextField.hidden = NO;
     self.becomeFirstResponderButton.hidden = self.inputTextField.isFirstResponder;
-  } else {
+  } else if (!_displayMoreTagsCount) {
     [self endEditing:YES];
     self.inputTextField.text = @"";
     self.inputTextField.hidden = YES;
     self.becomeFirstResponderButton.hidden = YES;
+  } else {
+	  [self endEditing:YES];
+	  self.inputTextField.userInteractionEnabled = NO;
+	  self.becomeFirstResponderButton.hidden = YES;
+	  [self updateMoreTagsLabel];
   }
   [self setNeedsLayout];
 }
@@ -388,7 +484,9 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
     tagButton.exclusiveTouch = YES;
     [tagButton addTarget:self action:@selector(tagButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.mutableTagButtons insertObject:tagButton atIndex:index];
+	  self.shownTagsCount = self.mutableTags.count;
     [self.scrollView addSubview:tagButton];
+	  [self updateMoreTagsLabel];
     [self setNeedsLayout];
   }
 }
@@ -403,6 +501,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
     [self.mutableTagButtons removeObjectAtIndex:index];
     [self.mutableTags insertObject:tag atIndex:newIndex];
     [self.mutableTagButtons insertObject:button atIndex:newIndex];
+	  [self updateMoreTagsLabel];
     [self setNeedsLayout];
     [self layoutIfNeeded];
   }
@@ -412,15 +511,19 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   if (index >= 0 && index < self.mutableTags.count) {
     [self.mutableTags removeObjectAtIndex:index];
     [self.mutableTagButtons[index] removeFromSuperview];
+	  self.shownTagsCount = self.mutableTags.count;
     [self.mutableTagButtons removeObjectAtIndex:index];
+	  [self updateMoreTagsLabel];
     [self setNeedsLayout];
   }
 }
 
 - (void)removeAllTags {
   [self.mutableTags removeAllObjects];
+	self.shownTagsCount = self.mutableTags.count;
   [self.mutableTagButtons makeObjectsPerformSelector:@selector(removeFromSuperview) withObject:nil];
   [self.mutableTagButtons removeAllObjects];
+	[self updateMoreTagsLabel];
   [self setNeedsLayout];
 }
 
@@ -595,6 +698,27 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
     view.transform = currentTransform;
   }
 
+}
+
+
+- (void)updateMoreTagsLabel {
+	NSUInteger notShownTagsCount = self.mutableTags.count - _shownTagsCount;
+	[self updateMoreTagsLabel:notShownTagsCount];
+}
+
+
+- (void)updateMoreTagsLabel:(NSUInteger)notShownTagsCount {
+	if (_shownTagsCount) {
+		if (notShownTagsCount == 1) {
+			self.inputTextField.text = _moreTagsStringSingular;
+		} else if (notShownTagsCount > 1) {
+			self.inputTextField.text = [NSString stringWithFormat:_moreTagsStringPlural, @(notShownTagsCount)];
+		} else {
+			self.inputTextField.text = nil;
+		}
+	} else if (_constantHeight) {
+		self.inputTextField.text = nil;
+	}
 }
 
 @end

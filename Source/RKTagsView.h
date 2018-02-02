@@ -36,6 +36,12 @@ typedef NS_ENUM(NSInteger, RKTagsViewTextFieldAlign) { // align is relative to a
 @property (nonatomic, weak, nullable) IBOutlet id<RKTagsViewDelegate> delegate;
 @property (nonatomic, readonly) CGSize contentSize;
 
+// Doesn't allow to display tags more then view's height.
+@property (nonatomic) BOOL constantHeight; // default is NO
+// Works only when constantHeight = YES and editable = NO, show not shown tags count in textField instead of placeholder.
+@property (nonatomic) BOOL displayMoreTagsCount; // default is NO
+@property (nonatomic) NSString *moreTagsStringSingular; // default is @"+1 more tag"
+@property (nonatomic) NSString *moreTagsStringPlural; // default is @"+%@ more tags"
 @property (nonatomic) BOOL addTagBySpace; // default is YES
 // Sets to trims input tag string, spaces and new lines.
 @property (nonatomic) BOOL trimAddedTag; // default is NO
