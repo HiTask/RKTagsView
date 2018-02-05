@@ -126,6 +126,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 	BOOL isViewOverfilled = NO;
 	_shownTagsCount = 0;
   for (UIButton *button in self.mutableTagButtons) {
+	  [button sizeToFit];
 	  struct TagButtonLayoutCalculationContext buttonLayoutCalculationContext = [self calculateTagButtonLayout:button with:lowerFrame previousButtonFrame:previousButtonFrame contentWidth:contentWidth];
 
 	  // Checks if current tag button and input text field overfill the view.
