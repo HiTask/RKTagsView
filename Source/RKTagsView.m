@@ -709,7 +709,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 
 
 - (void)updateMoreTagsLabel:(NSUInteger)notShownTagsCount {
-	if (_shownTagsCount) {
+	if (_displayMoreTagsCount) {
 		if (notShownTagsCount == 1) {
 			self.inputTextField.text = _moreTagsStringSingular;
 		} else if (notShownTagsCount > 1) {
