@@ -343,22 +343,37 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
     return;
   }
   _editable = editable;
-  if (editable) {
-    self.inputTextField.hidden = NO;
-    self.becomeFirstResponderButton.hidden = self.inputTextField.isFirstResponder;
-  } else if (!_displayMoreTagsCount) {
-    [self endEditing:YES];
-    self.inputTextField.text = @"";
-    self.inputTextField.hidden = YES;
-    self.becomeFirstResponderButton.hidden = YES;
-  } else {
-	  [self endEditing:YES];
-	  self.inputTextField.userInteractionEnabled = NO;
-	  self.becomeFirstResponderButton.hidden = YES;
-	  [self updateMoreTagsLabel];
-  }
-  [self setNeedsLayout];
+  [self invalidateInputTextFieldVisibility];
 }
+
+
+- (void)setDisplayMoreTagsCount:(BOOL)displayMoreTagsCount {
+	if (_displayMoreTagsCount == displayMoreTagsCount) {
+		return;
+	}
+	_displayMoreTagsCount = displayMoreTagsCount;
+	[self invalidateInputTextFieldVisibility];
+}
+
+
+- (void)invalidateInputTextFieldVisibility {
+	if (_editable) {
+		self.inputTextField.hidden = NO;
+		self.becomeFirstResponderButton.hidden = self.inputTextField.isFirstResponder;
+	} else if (!_displayMoreTagsCount) {
+		[self endEditing:YES];
+		self.inputTextField.text = @"";
+		self.inputTextField.hidden = YES;
+		self.becomeFirstResponderButton.hidden = YES;
+	} else {
+		[self endEditing:YES];
+		self.inputTextField.userInteractionEnabled = NO;
+		self.becomeFirstResponderButton.hidden = YES;
+		[self updateMoreTagsLabel];
+	}
+	[self setNeedsLayout];
+}
+
 
 - (void)setLineSpacing:(CGFloat)lineSpacing {
   if (_lineSpacing != lineSpacing) {
