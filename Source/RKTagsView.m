@@ -356,6 +356,15 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 
+- (void)setConstantHeight:(BOOL)constantHeight {
+	if (_constantHeight == constantHeight) {
+		return;
+	}
+	_constantHeight = constantHeight;
+	[self invalidateInputTextFieldVisibility];
+}
+
+
 - (void)invalidateInputTextFieldVisibility {
 	if (_editable) {
 		self.inputTextField.hidden = NO;
@@ -367,6 +376,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 		self.becomeFirstResponderButton.hidden = YES;
 	} else {
 		[self endEditing:YES];
+		self.inputTextField.hidden = NO;
 		self.inputTextField.userInteractionEnabled = NO;
 		self.becomeFirstResponderButton.hidden = YES;
 		[self updateMoreTagsLabel];
