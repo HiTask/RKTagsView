@@ -644,6 +644,9 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 - (BOOL)shouldInputTextDeleteBackward {
+	NSInteger cursorPosition = [self.textField offsetFromPosition:self.textField.beginningOfDocument toPosition:self.textField.selectedTextRange.start];
+	BOOL isCursorPositionAtBeginningOfDocument = (cursorPosition == 0 && self.textField.selectedTextRange.isEmpty);
+
   NSArray<NSNumber *> *tagIndexes = self.selectedTagIndexes;
   if (tagIndexes.count > 0) {
     for (NSInteger i = tagIndexes.count - 1; i >= 0; i--) {
@@ -656,7 +659,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
       }
     }
     return NO;
-  } else if ([self.inputTextField.text isEqualToString:@""] && self.mutableTags.count > 0) {
+  } else if (self.mutableTags.count > 0 && isCursorPositionAtBeginningOfDocument) {
     NSInteger lastTagIndex = self.mutableTags.count - 1;
     if (self.selectBeforeRemoveOnDeleteBackward) {
       if ([self.delegate respondsToSelector:@selector(tagsView:shouldSelectTagAtIndex:)] && ![self.delegate tagsView:self shouldSelectTagAtIndex:lastTagIndex]) {
