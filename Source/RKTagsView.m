@@ -593,22 +593,21 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
     [self deselectAll];
   }
 	
-  if (!_addTagBySpace) {
-	  return;
+  if (_addTagBySpace) {
+	  NSMutableArray *tags = [[(self.inputTextField.text ?: @"") componentsSeparatedByCharactersInSet:self.deliminater] mutableCopy];
+	  self.inputTextField.text = [tags lastObject];
+	  [tags removeLastObject];
+	  for (NSString *tag in tags) {
+		if ([tag isEqualToString:@""] || ([self.delegate respondsToSelector:@selector(tagsView:shouldAddTagWithText:)] && ![self.delegate tagsView:self shouldAddTagWithText:tag])) {
+		  continue;
+		}
+		[self addTag:tag];
+		if ([self.delegate respondsToSelector:@selector(tagsViewDidChange:)]) {
+		  [self.delegate tagsViewDidChange:self];
+		}
+	  }
   }
 	
-  NSMutableArray *tags = [[(self.inputTextField.text ?: @"") componentsSeparatedByCharactersInSet:self.deliminater] mutableCopy];
-  self.inputTextField.text = [tags lastObject];
-  [tags removeLastObject];
-  for (NSString *tag in tags) {
-    if ([tag isEqualToString:@""] || ([self.delegate respondsToSelector:@selector(tagsView:shouldAddTagWithText:)] && ![self.delegate tagsView:self shouldAddTagWithText:tag])) {
-      continue;
-    }
-    [self addTag:tag];
-    if ([self.delegate respondsToSelector:@selector(tagsViewDidChange:)]) {
-      [self.delegate tagsViewDidChange:self];
-    }
-  }
   [self setNeedsLayout];
   [self layoutIfNeeded];
 	
