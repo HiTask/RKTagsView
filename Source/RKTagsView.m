@@ -589,7 +589,15 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 
 #pragma mark Handlers
 
+
 - (void)inputTextFieldChanged {
+	if (_trimRepeatedSpacesAtInput) {
+		NSInteger infiniteCycleGuardCount = 10;
+		while ([self.textField.text containsString:@"  "] && --infiniteCycleGuardCount > 0) {
+			self.textField.text = [self.textField.text stringByReplacingOccurrencesOfString:@"  " withString:@" "];
+		}
+	}
+	
   if (self.deselectAllOnEdit) {
     [self deselectAll];
   }
