@@ -98,6 +98,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   _moreTagsStringSingular = @"+1 more tag";
   _moreTagsStringPlural = @"+%@ more tags";
 
+	_addSpaceAtEndEditing = YES;
 	_addTagBySpace = YES;
   _editable = YES;
   _selectable = YES;
@@ -632,7 +633,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 - (void)inputTextFieldEditingDidEnd {
-  if (self.inputTextField.text.length > 0) {
+  if (self.inputTextField.text.length > 0 && _addSpaceAtEndEditing) {
     self.inputTextField.text = [NSString stringWithFormat:@"%@ ", self.inputTextField.text];
     [self inputTextFieldChanged];
   }
