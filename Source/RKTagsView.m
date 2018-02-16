@@ -695,8 +695,13 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 - (void)tagButtonTapped:(UIButton *)button {
+	int buttonIndex = (int)[self.mutableTagButtons indexOfObject:button];
+	
+	if ([self.delegate respondsToSelector:@selector(tagsView:tagTappedAtIndex:)]) {
+		[self.delegate tagsView:self tagTappedAtIndex:buttonIndex];
+	}
+	
   if (self.selectable) {
-    int buttonIndex = (int)[self.mutableTagButtons indexOfObject:button];
     if (button.selected) {
       if ([self.delegate respondsToSelector:@selector(tagsView:shouldDeselectTagAtIndex:)] && ![self.delegate tagsView:self shouldDeselectTagAtIndex:buttonIndex]) {
         return;
@@ -710,6 +715,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
     }
   }
 }
+
 
 #pragma mark Internal Helpers
 
