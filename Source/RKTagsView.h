@@ -10,6 +10,11 @@ typedef NS_ENUM(NSInteger, RKTagsViewTextFieldAlign) { // align is relative to a
   RKTagsViewTextFieldAlignBottom,
 };
 
+typedef NS_ENUM(NSInteger, RKTagsViewAlign) {
+	RKTagsViewAlignLeft,
+	RKTagsViewAlignRight,
+};
+
 @class RKTagsView;
 
 @protocol RKTagsViewDelegate <NSObject>
@@ -62,6 +67,8 @@ typedef NS_ENUM(NSInteger, RKTagsViewTextFieldAlign) { // align is relative to a
 @property (nonatomic) CGFloat tagButtonHeight; // default is auto
 @property (nonatomic) CGFloat textFieldHeight; // default is auto
 @property (nonatomic) RKTagsViewTextFieldAlign textFieldAlign; // default is center
+// Use it only when displayMoreTagsCount = NO and editable = NO.
+@property (nonatomic) RKTagsViewAlign tagsViewAlign; // default is left
 
 @property (nonatomic, strong) NSCharacterSet* deliminater; // defailt is [NSCharacterSet whitespaceCharacterSet]
 

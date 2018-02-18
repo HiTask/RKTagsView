@@ -111,6 +111,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   _tagButtonHeight = RKTagsViewAutomaticDimension;
   _textFieldHeight = RKTagsViewAutomaticDimension;
   _textFieldAlign = RKTagsViewTextFieldAlignCenter;
+	_tagsViewAlign = RKTagsViewAlignLeft;
   _deliminater = [NSCharacterSet whitespaceCharacterSet];
   _scrollsHorizontally = NO;
 }
@@ -192,6 +193,60 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   // layout becomeFirstResponder button
   self.becomeFirstResponderButton.frame = CGRectMake(-self.scrollView.contentInset.left, -self.scrollView.contentInset.top, self.contentSize.width, self.contentSize.height);
   [self.scrollView bringSubviewToFront:self.becomeFirstResponderButton];
+	
+	[self fixTagsAligning];
+}
+
+
+- (void)fixTagsAligning {
+	if (_tagsViewAlign == RKTagsViewAlignLeft) {
+		return;
+	}
+	
+	NSUInteger i = 0;
+	while (i < _shownTagsCount) {
+		NSUInteger indexOfLastTagInRow = [self indexOfLastTagInRowStaringFrom:i];
+		CGFloat rightPaddingOfRow = [self rightPaddingOfRowStaringFrom:i];
+											  
+		[self moveTagsFrom:i to:indexOfLastTagInRow byXOffset:rightPaddingOfRow];
+		i = indexOfLastTagInRow + 1;
+	}
+}
+
+
+- (void)moveTagsFrom:(NSUInteger)startIndex to:(NSUInteger)endIndex byXOffset:(CGFloat)offset {
+	for (NSUInteger i = startIndex; i <= endIndex; i++) {
+		UIButton *button = self.mutableTagButtons[i];
+		CGRect frame = button.frame;
+		frame.origin.x += offset;
+		button.frame = frame;
+	}
+}
+
+
+- (NSUInteger)indexOfLastTagInRowStaringFrom:(NSUInteger)startIndex {
+	NSUInteger index = startIndex;
+	UIButton *startButton = self.mutableTagButtons[startIndex];
+	
+	while (index < _shownTagsCount - 1) {
+		UIButton *nextButton = self.mutableTagButtons[index + 1];
+		if (nextButton.frame.origin.y != startButton.frame.origin.y) {
+			break;
+		}
+		
+		index++;
+	}
+	
+	return index;
+}
+
+
+- (CGFloat)rightPaddingOfRowStaringFrom:(NSUInteger)startIndex {
+	NSUInteger indexOfLastTagInRow = [self indexOfLastTagInRowStaringFrom:startIndex];
+	UIButton *lastTagInRow = self.mutableTagButtons[indexOfLastTagInRow];
+	CGFloat rightPaddingOfRow = self.scrollView.contentSize.width - self.scrollView.contentInset.right - (lastTagInRow.frame.origin.x + lastTagInRow.frame.size.width);
+	
+	return rightPaddingOfRow;
 }
 
 
