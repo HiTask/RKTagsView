@@ -132,19 +132,19 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 	  struct TagButtonLayoutCalculationContext buttonLayoutCalculationContext = [self calculateTagButtonLayout:button with:lowerFrame previousButtonFrame:previousButtonFrame contentWidth:contentWidth];
 
 	  // Checks if current tag button and input text field overfill the view.
-	  if (_constantHeight && !_displayMoreTagsCount) {
-		  CGFloat maxY = CGRectGetMaxY(buttonLayoutCalculationContext.buttonFrame);
-		  if (maxY > self.bounds.size.height) {
+	  if (_numberOfTagLines > 0 && !_displayMoreTagsCount) {
+		  NSUInteger lineIndex = [self lineIndexOfElementWith:buttonLayoutCalculationContext.buttonFrame];
+		  if (lineIndex >= _numberOfTagLines) {
 			  isViewOverfilled = YES;
 		  }
-	  } else if (_constantHeight && _displayMoreTagsCount) {
+	  } else if (_numberOfTagLines > 0 && _displayMoreTagsCount) {
 		  NSUInteger notShownTagsCount = self.mutableTagButtons.count - _shownTagsCount;
 		  [self updateMoreTagsLabel:notShownTagsCount];
 		  [self.inputTextField sizeToFit];
 		  struct InputTextFieldLayoutCalculationContext inputTextFieldLayoutCalculationContext = [self calculateTextFieldLayoutWith:buttonLayoutCalculationContext.buttonFrame previousButtonFrame:buttonLayoutCalculationContext.buttonFrame contentWidth:buttonLayoutCalculationContext.contentWidth];
 
-		  CGFloat maxY = CGRectGetMaxY(inputTextFieldLayoutCalculationContext.textfieldFrame);
-		  if (maxY > self.bounds.size.height) {
+		  NSUInteger lineIndex = [self lineIndexOfElementWith:inputTextFieldLayoutCalculationContext.textfieldFrame];
+		  if (lineIndex >= _numberOfTagLines) {
 			  isViewOverfilled = YES;
 		  }
 	  }
@@ -195,6 +195,19 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   [self.scrollView bringSubviewToFront:self.becomeFirstResponderButton];
 	
 	[self fixTagsAligning];
+}
+
+
+
+- (NSUInteger)lineIndexOfElementWith:(CGRect)frame {
+	NSUInteger lineIndex = (frame.origin.y - self.scrollView.contentInset.top) / (_lineSpacing + frame.size.height);
+	return lineIndex;
+}
+
+
+- (BOOL)constantHeight {
+	BOOL constantHeight = (_numberOfTagLines > 0);
+	return constantHeight;
 }
 
 
@@ -412,11 +425,11 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 
-- (void)setConstantHeight:(BOOL)constantHeight {
-	if (_constantHeight == constantHeight) {
+- (void)setNumberOfTagLines:(NSUInteger)numberOfTagLines {
+	if (_numberOfTagLines == numberOfTagLines) {
 		return;
 	}
-	_constantHeight = constantHeight;
+	_numberOfTagLines = numberOfTagLines;
 	[self invalidateInputTextFieldVisibility];
 }
 
@@ -814,7 +827,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 		} else {
 			self.inputTextField.text = nil;
 		}
-	} else if (_constantHeight) {
+	} else if (self.constantHeight) {
 		self.inputTextField.text = nil;
 	}
 }

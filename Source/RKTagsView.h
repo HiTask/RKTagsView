@@ -44,8 +44,8 @@ typedef NS_ENUM(NSInteger, RKTagsViewAlign) {
 
 @property (nonatomic) BOOL addSpaceAtEndEditing; // default is YES
 @property (nonatomic) BOOL trimRepeatedSpacesAtInput; // default is NO
-// Doesn't allow to display tags more then view's height.
-@property (nonatomic) BOOL constantHeight; // default is NO
+// Doesn't allow to display tags more then specified lines number.
+@property (nonatomic) NSUInteger numberOfTagLines; // default is 0
 // Works only when constantHeight = YES and editable = NO, show not shown tags count in textField instead of placeholder.
 @property (nonatomic) BOOL displayMoreTagsCount; // default is NO
 @property (nonatomic) NSString *moreTagsStringSingular; // default is @"+1 more tag"
