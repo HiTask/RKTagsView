@@ -315,9 +315,19 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 	}
 	if (self.mutableTagButtons.count == 0) {
 		layoutCalculationContext.textfieldFrame.origin.x = 0;
-		layoutCalculationContext.textfieldFrame.origin.y = 0;
 		layoutCalculationContext.textfieldFrame.size.width = contentWidth;
 		layoutCalculationContext.lowerFrame = layoutCalculationContext.textfieldFrame;
+		
+		switch (self.textFieldAlign) {
+			case RKTagsViewTextFieldAlignTop:
+				layoutCalculationContext.textfieldFrame.origin.y = 0;
+				break;
+			case RKTagsViewTextFieldAlignCenter:
+				layoutCalculationContext.textfieldFrame.origin.y = (self.bounds.size.height - layoutCalculationContext.textfieldFrame.size.height) / 2;
+				break;
+			case RKTagsViewTextFieldAlignBottom:
+				layoutCalculationContext.textfieldFrame.origin.y = self.bounds.size.height - layoutCalculationContext.textfieldFrame.size.height;
+		}
 	} else if (_scrollsHorizontally || (CGRectGetMaxX(previousButtonFrame) + self.interitemSpacing + layoutCalculationContext.textfieldFrame.size.width <= contentWidth)) {
 		layoutCalculationContext.textfieldFrame.origin.x = self.interitemSpacing + CGRectGetMaxX(previousButtonFrame);
 		switch (self.textFieldAlign) {
