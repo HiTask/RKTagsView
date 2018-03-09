@@ -31,6 +31,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 @property () NSUInteger shownTagsCount;
 @property (nonatomic, strong) NSMutableArray<NSString *> *mutableTags;
 @property (nonatomic, strong) NSMutableArray<UIButton *> *mutableTagButtons;
+@property (nonatomic, strong) NSMutableArray<UIButton *> *tagButtonsPool;
 @property (nonatomic, strong, readwrite) UIScrollView *scrollView;
 @property (nonatomic, strong) __RKInputTextField *inputTextField;
 @property (nonatomic, strong) UIButton *becomeFirstResponderButton;
@@ -75,6 +76,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 - (void)commonSetup {
   self.mutableTags = [NSMutableArray new];
   self.mutableTagButtons = [NSMutableArray new];
+	self.tagButtonsPool = [NSMutableArray new];
   //
   self.scrollView = [[UIScrollView alloc] initWithFrame:self.bounds];
   self.scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -550,6 +552,10 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 - (void)addTag:(NSString *)tag {
+	[self addTag:tag updateMoreTagsLabel:YES];
+}
+
+- (void)addTag:(NSString *)tag updateMoreTagsLabel:(BOOL)updateMoreTagsLabel {
   if (tag == nil) {
 	return;
   }
@@ -561,15 +567,31 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 	tagToAdd = tag;
   }
   if (tagToAdd.length > 0) {
-	[self insertTag:tagToAdd atIndex:self.mutableTags.count];
+	[self insertTag:tagToAdd atIndex:self.mutableTags.count updateMoreTagsLabel:NO];
+	  [self updateMoreTagsLabel];
   }
 }
 
-- (void)insertTag:(NSString *)tag atIndex:(NSInteger)index {
+- (void)addTags:(NSArray<NSString *> *)tags {
+	for (NSString *tag in tags) {
+		[self addTag:tag updateMoreTagsLabel:NO];
+	}
+	[self updateMoreTagsLabel];
+}
+
+
+- (void)insertTag:(NSString *)tag atIndex:(NSInteger)index  {
+	[self insertTag:tag atIndex:index updateMoreTagsLabel:YES];
+}
+
+- (void)insertTag:(NSString *)tag atIndex:(NSInteger)index updateMoreTagsLabel:(BOOL)updateMoreTagsLabel {
   if (index >= 0 && index <= self.mutableTags.count) {
     [self.mutableTags insertObject:tag atIndex:index];
     UIButton *tagButton;
-    if ([self.delegate respondsToSelector:@selector(tagsView:buttonForTagAtIndex:)]) {
+	  if (self.tagButtonsPool.count > 0) {
+		  tagButton = self.tagButtonsPool.lastObject;
+		  [self.tagButtonsPool removeObject:tagButton];
+	  } else if ([self.delegate respondsToSelector:@selector(tagsView:buttonForTagAtIndex:)]) {
       tagButton = [self.delegate tagsView:self buttonForTagAtIndex:index];
     } else {
       tagButton = [UIButton new];
@@ -591,7 +613,9 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
     [self.mutableTagButtons insertObject:tagButton atIndex:index];
 	  self.shownTagsCount = self.mutableTags.count;
     [self.scrollView addSubview:tagButton];
-	  [self updateMoreTagsLabel];
+	  if (updateMoreTagsLabel) {
+		  [self updateMoreTagsLabel];
+	  }
     [self setNeedsLayout];
   }
 }
@@ -614,10 +638,12 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 
 - (void)removeTagAtIndex:(NSInteger)index {
   if (index >= 0 && index < self.mutableTags.count) {
+	  UIButton *tagButton = self.mutableTagButtons[index];
+	  [self.tagButtonsPool addObject:tagButton];
     [self.mutableTags removeObjectAtIndex:index];
-    [self.mutableTagButtons[index] removeFromSuperview];
+    [tagButton removeFromSuperview];
 	  self.shownTagsCount = self.mutableTags.count;
-    [self.mutableTagButtons removeObjectAtIndex:index];
+    [self.mutableTagButtons removeObject:tagButton];
 	  [self updateMoreTagsLabel];
     [self setNeedsLayout];
   }
@@ -627,6 +653,7 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   [self.mutableTags removeAllObjects];
 	self.shownTagsCount = self.mutableTags.count;
   [self.mutableTagButtons makeObjectsPerformSelector:@selector(removeFromSuperview) withObject:nil];
+	[self.tagButtonsPool addObjectsFromArray:self.mutableTagButtons];
   [self.mutableTagButtons removeAllObjects];
 	[self updateMoreTagsLabel];
   [self setNeedsLayout];
