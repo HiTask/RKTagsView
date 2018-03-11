@@ -585,12 +585,15 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
 }
 
 - (void)insertTag:(NSString *)tag atIndex:(NSInteger)index updateMoreTagsLabel:(BOOL)updateMoreTagsLabel {
+	
+	BOOL isReuseButtonDelegateImplemented = (self.delegate != nil && [self.delegate respondsToSelector:@selector(tagsView:reuseButton:forTagAtIndex:)]);
   if (index >= 0 && index <= self.mutableTags.count) {
     [self.mutableTags insertObject:tag atIndex:index];
     UIButton *tagButton;
-	  if (self.tagButtonsPool.count > 0) {
+	  if (isReuseButtonDelegateImplemented && self.tagButtonsPool.count > 0) {
 		  tagButton = self.tagButtonsPool.lastObject;
 		  [self.tagButtonsPool removeObject:tagButton];
+		  [self.delegate tagsView:self reuseButton:tagButton forTagAtIndex:index];
 	  } else if ([self.delegate respondsToSelector:@selector(tagsView:buttonForTagAtIndex:)]) {
       tagButton = [self.delegate tagsView:self buttonForTagAtIndex:index];
     } else {
