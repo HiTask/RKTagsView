@@ -405,7 +405,6 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
   for (UIButton *button in self.mutableTagButtons) {
     if (button.tag == DEFAULT_BUTTON_TAG) {
       button.titleLabel.font = font;
-      [button sizeToFit];
       [self setNeedsLayout];
     }
   }
@@ -610,7 +609,6 @@ const CGFloat RKTagsViewAutomaticDimension = -0.0001;
       tagButton.contentEdgeInsets = UIEdgeInsetsMake(DEFAULT_BUTTON_VERTICAL_PADDING, DEFAULT_BUTTON_HORIZONTAL_PADDING, DEFAULT_BUTTON_VERTICAL_PADDING, DEFAULT_BUTTON_HORIZONTAL_PADDING);
       tagButton.tag = DEFAULT_BUTTON_TAG;
     }
-    [tagButton sizeToFit];
     tagButton.exclusiveTouch = YES;
     [tagButton addTarget:self action:@selector(tagButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.mutableTagButtons insertObject:tagButton atIndex:index];
